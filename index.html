@@ -160,6 +160,12 @@ button{cursor:pointer}
   font-family:var(--mono);font-size:10.5px;padding:3px 7px;border-radius:6px;background:#131c17;
   border:1px solid var(--line);color:var(--muted);
 }
+.chip-btn{
+  font-family:var(--mono);font-size:10.5px;padding:4px 8px;border-radius:999px;background:#131c17;
+  border:1px solid var(--line);color:var(--muted);cursor:pointer;transition:.12s;
+}
+.chip-btn:hover{border-color:#3d6a4c;color:var(--text)}
+.chip-btn.on{background:#1d3a26;border-color:#4f9a5e;color:var(--acc);font-weight:600}
 
 /* file tree */
 .tree-row{
@@ -402,6 +408,12 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
   padding-bottom:max(16px, env(safe-area-inset-bottom));
 }
 .fs-anim-row{min-height:36px}
+.fs-speed{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:9px;
+  border:1px solid #24362c;background:#101a15;font-size:11px;color:var(--muted);font-family:var(--mono);
+}
+.fs-speed input[type=range]{width:90px;accent-color:var(--acc);vertical-align:middle}
+.fs-speed span{min-width:28px;text-align:right;color:var(--text)}
 .fs-bar-top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .fs-bar .ttl{font-weight:700;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .fs-bar .sub{font-family:var(--mono);font-size:11px;color:var(--muted2)}
@@ -421,11 +433,11 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
 .fs-anim-chip.on{background:#1d3a26;border-color:#4f9a5e;color:var(--acc);font-weight:600}
 .fs-anim-chip .dur{opacity:.55;font-family:var(--mono);font-size:10px;margin-left:4px}
 .fs-nav{order:1}
-.light-panel,.floor-panel,.combine-panel{
+.light-panel,.floor-panel,.combine-panel,.hue-panel,.pov-panel,.compare-panel{
   top:auto !important;bottom:calc(38vh + 8px);left:12px;right:auto;max-width:min(320px,92vw);
 }
 @media (max-height:700px){
-  .light-panel,.floor-panel,.combine-panel{bottom:42vh}
+  .light-panel,.floor-panel,.combine-panel,.hue-panel,.pov-panel,.compare-panel{bottom:42vh}
 }
 
 @media (max-width:1200px){
@@ -525,12 +537,33 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
 
 
 .vg-tools{display:flex;gap:6px;margin-left:auto}
-.light-panel,.floor-panel,.combine-panel{
+.light-panel,.floor-panel,.combine-panel,.hue-panel,.pov-panel,.compare-panel{
   display:none;flex-direction:column;gap:8px;padding:10px 12px;
   background:#101a15ee;border:1px solid #2a3d32;border-radius:10px;
   position:absolute;top:64px;right:12px;z-index:6;min-width:220px;backdrop-filter:blur(10px);
 }
-.light-panel.on,.floor-panel.on,.combine-panel.on{display:flex}
+.light-panel.on,.floor-panel.on,.combine-panel.on,.hue-panel.on,.pov-panel.on,.compare-panel.on{display:flex}
+.pov-list{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto}
+.pov-item{display:flex;align-items:center;gap:6px;padding:6px 8px;border-radius:8px;background:#131c17;border:1px solid var(--line);font-size:12px;cursor:pointer}
+.pov-item:hover{border-color:#4f9a5e}
+.pov-item .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pov-item .del{border:none;background:transparent;color:var(--red);cursor:pointer;font-size:14px;padding:2px 6px}
+.fs-pure-close{
+  display:none;position:fixed;top:14px;right:14px;z-index:80;
+  width:42px;height:42px;border-radius:50%;border:1px solid #2a3d32;
+  background:rgba(12,18,15,.88);color:var(--text);font-size:18px;
+  place-items:center;cursor:pointer;backdrop-filter:blur(8px);
+}
+.fs-veil.pure .fs-bar,
+.fs-veil.pure .fs-nav,
+.fs-veil.pure .light-panel,
+.fs-veil.pure .floor-panel,
+.fs-veil.pure .combine-panel,
+.fs-veil.pure .hue-panel,
+.fs-veil.pure .pov-panel,
+.fs-veil.pure .compare-panel,
+.fs-veil.pure .bg-menu{display:none !important}
+.fs-veil.pure .fs-pure-close{display:grid}
 .light-panel label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
 .light-panel input[type=range]{flex:1;accent-color:var(--acc);max-width:140px}
 .fs-stage{background:#0a100d}
@@ -702,7 +735,30 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
     <label class="floor-color">Warna balok <input type="color" id="platColor" value="#2a3d32"></label>
     <label class="floor-shadow"><input type="checkbox" id="chkShadow" checked> Bayangan bentuk</label>
     <label class="floor-shadow">Opasitas bayangan <input type="range" id="shadowOpacity" min="10" max="100" value="55"></label>
+    <label class="floor-shadow" style="width:100%;margin-top:4px">Ketinggian model <input type="range" id="modelHeight" min="-50" max="50" value="0" step="0.5" style="flex:1;max-width:160px"></label>
+    <div style="font-size:11px;color:var(--muted2);width:100%;text-align:right" id="modelHeightVal">0</div>
   </div>
+  <div class="hue-panel" id="huePanel">
+    <div class="panel-head"><span>Hue Tekstur</span><button type="button" id="hueClose" title="Tutup">✕</button></div>
+    <label>Hue <input type="range" id="hueSlider" min="0" max="360" value="0" style="flex:1;max-width:160px"></label>
+    <div style="font-size:11px;color:var(--muted2);width:100%;display:flex;justify-content:space-between"><span id="hueVal">0°</span><button type="button" class="btn small" id="hueReset" style="padding:3px 8px">Reset</button></div>
+    <div style="display:flex;gap:6px;margin-top:6px;width:100%">
+      <button type="button" class="btn small primary" id="hueDlPng" style="flex:1;justify-content:center">⬇ PNG</button>
+      <button type="button" class="btn small" id="hueDlJpg" style="flex:1;justify-content:center">⬇ JPG</button>
+    </div>
+  </div>
+  <div class="pov-panel" id="povPanel">
+    <div class="panel-head"><span>Bookmark POV</span><button type="button" id="povClose" title="Tutup">✕</button></div>
+    <div class="pov-list" id="povList"></div>
+  </div>
+  <div class="compare-panel" id="comparePanel">
+    <div class="panel-head"><span>Bandingkan Entitas</span><button type="button" id="compareClose" title="Tutup">✕</button></div>
+    <p style="margin:0 0 8px;font-size:12px;color:var(--muted);line-height:1.5">Pilih entitas kedua untuk ditampilkan berdampingan di fullscreen.</p>
+    <select id="compareSelect" style="width:100%;background:#0d1512;border:1px solid #24362c;border-radius:8px;padding:8px;color:var(--text);font-family:var(--mono);font-size:12px"></select>
+    <button class="btn primary small" id="applyCompare" style="margin-top:8px;width:100%;justify-content:center">Bandingkan</button>
+    <button class="btn small" id="clearCompare" style="margin-top:6px;width:100%;justify-content:center">Lepas bandingkan</button>
+  </div>
+  <button class="fs-pure-close" id="fsPureClose" title="Keluar pure fullscreen">✕</button>
   <div class="fs-bar">
     <div class="fs-bar-top">
       <div style="min-width:0;flex:1">
@@ -715,11 +771,22 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
         <button class="icon-btn" id="fsReset" title="Reset kamera">⟲</button>
         <button class="icon-btn" id="fsBg" title="Background">🎨</button>
         <button class="icon-btn" id="fsLight" title="Arah lampu">💡</button>
-        <button class="icon-btn" id="fsFloor" title="Alas">▭</button>
+        <button class="icon-btn" id="fsFloor" title="Alas &amp; ketinggian">▭</button>
+        <button class="icon-btn" id="fsHue" title="Hue tekstur &amp; download">🌈</button>
         <button class="icon-btn" id="fsSound" title="Suara ON/OFF">🔊</button>
-        <button class="icon-btn" id="fsSavePov" title="Simpan POV untuk grid">📌</button>
+        <button class="icon-btn" id="fsLoopMode" title="Mode loop: Normal↔Reverse / Maju saja" class="on">⇄</button>
+        <label class="fs-speed" title="Kecepatan animasi">
+          <span id="fsSpeedLabel">1×</span>
+          <input type="range" id="fsSpeed" min="0.1" max="3" step="0.05" value="1">
+        </label>
+        <button class="icon-btn" id="fsBones" title="Highlight tulang / skeleton">🦴</button>
+        <button class="icon-btn" id="fsExport" title="Export model ke GLB">📦</button>
+        <button class="icon-btn" id="fsSavePov" title="Simpan sudut kamera (bookmark POV)">📌</button>
+        <button class="icon-btn" id="fsPovList" title="Daftar POV tersimpan">📋</button>
+        <button class="icon-btn" id="fsCompare" title="Bandingkan dengan entitas lain">⧉</button>
         <button class="icon-btn" id="fsCombine" title="Gabungkan model/armor terkait">🧩</button>
         <button class="icon-btn" id="fsShot" title="Screenshot">📷</button>
+        <button class="icon-btn" id="fsPure" title="Fullscreen murni (tanpa tombol)">⊡</button>
         <button class="btn small" id="fsClose">Tutup ✕</button>
       </div>
     </div>
@@ -2699,6 +2766,7 @@ window.MC = window.MC || {};
     materials: [],
     anim: null, animIndex: -1, animList: [],
     playing: false, speed: 1, time: 0,
+    animDir: 1, animLoopMode: 'pingpong',
 autoRotate: false,
     currentTexture: null,
     textureVariants: [],
@@ -3660,6 +3728,20 @@ autoRotate: false,
     state.currentTexture = null;
     state.playing = false;
     state.time = 0;
+    state.modelHeightOffset = 0;
+    state.textureHue = 0;
+    try { clearBoneHelper(); } catch (e) {}
+    state.boneHighlight = false;
+    try {
+      const mh = document.getElementById('modelHeight');
+      const mhVal = document.getElementById('modelHeightVal');
+      if (mh) mh.value = '0';
+      if (mhVal) mhVal.textContent = '0';
+      const hs = document.getElementById('hueSlider');
+      const hv = document.getElementById('hueVal');
+      if (hs) hs.value = '0';
+      if (hv) hv.textContent = '0°';
+    } catch (e) {}
   }
   V.clearModel = clearModel;
   V.clear = function () { clearModel(); state.bbox = null; };
@@ -3828,6 +3910,7 @@ autoRotate: false,
   V.setAnim = function (index) {
     state.animIndex = index;
     state.time = 0;
+    state.animDir = 1; // mulai dari arah normal
     const a = state.animList[index];
     state.anim = a || null;
     if (a) {
@@ -3924,9 +4007,13 @@ autoRotate: false,
     const def = anim.def || {};
     const bones = def.bones || {};
     const length = anim.length || 1;
+    // Jangan wrap di sini — wrap dilakukan di loop() sesuai mode.
+    // Kalau di-wrap saat t==length, pose loncat ke frame 0 (glitch reverse).
     let t = time;
-    // selalu loop di viewer agar preview hidup
-    if (length > 0) t = ((t % length) + length) % length;
+    if (length > 0) {
+      if (t > length) t = length;
+      if (t < 0) t = 0;
+    }
     const env = MC.molangEnv({ query: { anim_time: t, life_time: t } });
 
     maps.forEach(function (boneMap) {
@@ -3957,17 +4044,39 @@ autoRotate: false,
   V.play = function () {
     if (!state.anim) return;
     state.playing = true;
+    if (state.animDir == null) state.animDir = 1;
     playAnimLinkedSound(state.anim);
   };
-  V.pause = function () { state.playing = false; };
-  V.togglePlay = function () { if (state.anim) state.playing = !state.playing; if (state.playing) playAnimLinkedSound(state.anim); return state.playing; };
+  V.pause = function () {
+    state.playing = false;
+    try { if (MC.ui && MC.ui.stopAnimAudio) MC.ui.stopAnimAudio(); } catch (e) {}
+  };
+  V.togglePlay = function () {
+    if (!state.anim) return false;
+    state.playing = !state.playing;
+    if (state.playing) playAnimLinkedSound(state.anim);
+    else {
+      try { if (MC.ui && MC.ui.stopAnimAudio) MC.ui.stopAnimAudio(); } catch (e) {}
+    }
+    return state.playing;
+  };
   V.setSpeed = function (v) { state.speed = U.clamp(U.num(v, 1), 0.05, 4); };
+  V.getSpeed = function () { return state.speed || 1; };
+  // mode: 'pingpong' (normal↔reverse, default) | 'forward'
+  V.setAnimLoopMode = function (mode) {
+    state.animLoopMode = (mode === 'forward') ? 'forward' : 'pingpong';
+    if (state.animLoopMode === 'pingpong' && (state.animDir == null || state.animDir === 0)) state.animDir = 1;
+  };
+  V.getAnimLoopMode = function () { return state.animLoopMode || 'pingpong'; };
   V.getPlayback = function () {
     return {
       playing: state.playing, time: state.time,
       length: state.anim ? state.anim.length : 0,
       index: state.animIndex,
-      anim: state.anim
+      anim: state.anim,
+      speed: state.speed || 1,
+      dir: state.animDir || 1,
+      loopMode: state.animLoopMode || 'pingpong'
     };
   };
   V.resetCamera = function () {
@@ -4019,6 +4128,238 @@ autoRotate: false,
     }
   };
   V.setTwinkle = function () { /* dihapus */ };
+
+  /* ---- bone highlight (skeleton overlay) ---- */
+  state.boneHighlight = false;
+  state.boneHelper = null;
+  function rebuildBoneHelper() {
+    clearBoneHelper();
+    if (!state.boneHighlight || !state.bones || !state.bones.size) return;
+    const sphereGeo = new THREE.SphereGeometry(0.35, 8, 6);
+    const jointMat = new THREE.MeshBasicMaterial({ color: 0x5ee06a, depthTest: false });
+    const lineMat = new THREE.LineBasicMaterial({ color: 0xffc857, depthTest: false });
+    state._boneExtras = [];
+    state.bones.forEach(function (rec) {
+      if (!rec.group) return;
+      const joint = new THREE.Mesh(sphereGeo, jointMat);
+      joint.renderOrder = 999;
+      joint.userData.__boneHelper = true;
+      rec.group.add(joint);
+      state._boneExtras.push({ parent: rec.group, obj: joint });
+      if (rec.parent) {
+        const pref = state.bones.get(String(rec.parent).toLowerCase());
+        if (pref && pref.group) {
+          const lg = new THREE.BufferGeometry().setFromPoints([
+            new THREE.Vector3(0, 0, 0),
+            rec.basePos.clone()
+          ]);
+          const line = new THREE.Line(lg, lineMat);
+          line.renderOrder = 998;
+          line.userData.__boneHelper = true;
+          pref.group.add(line);
+          state._boneExtras.push({ parent: pref.group, obj: line });
+        }
+      }
+    });
+    state.boneHelper = true;
+  }
+  function clearBoneHelper() {
+    (state._boneExtras || []).forEach(function (x) {
+      try {
+        if (x.parent) x.parent.remove(x.obj);
+        if (x.obj.geometry) x.obj.geometry.dispose();
+        if (x.obj.material) x.obj.material.dispose();
+      } catch (e) {}
+    });
+    state._boneExtras = [];
+    state.boneHelper = null;
+  }
+  V.setBoneHighlight = function (on) {
+    state.boneHighlight = !!on;
+    clearBoneHelper();
+    if (state.boneHighlight) rebuildBoneHelper();
+  };
+  V.getBoneHighlight = function () { return !!state.boneHighlight; };
+  V.toggleBoneHighlight = function () {
+    V.setBoneHighlight(!state.boneHighlight);
+    return state.boneHighlight;
+  };
+
+  /* ---- POV bookmarks (localStorage) ---- */
+  const POV_KEY = 'mc_addon_inspector_povs_v1';
+  V.listPov = function () {
+    try { return JSON.parse(localStorage.getItem(POV_KEY) || '[]'); } catch (e) { return []; }
+  };
+  V.savePov = function (label) {
+    const o = state.orb;
+    const item = {
+      id: Date.now().toString(36),
+      label: label || ('POV ' + new Date().toLocaleTimeString()),
+      entity: state.detail ? state.detail.id : '',
+      theta: o.theta, phi: o.phi, dist: o.dist,
+      tx: o.target.x, ty: o.target.y, tz: o.target.z,
+      at: Date.now()
+    };
+    const list = V.listPov();
+    list.unshift(item);
+    while (list.length > 30) list.pop();
+    try { localStorage.setItem(POV_KEY, JSON.stringify(list)); } catch (e) {}
+    return item;
+  };
+  V.applyPov = function (item) {
+    if (!item || !state.orb) return false;
+    state.orb.theta = item.theta;
+    state.orb.phi = item.phi;
+    state.orb.dist = item.dist;
+    state.orb.target.set(item.tx, item.ty, item.tz);
+    state.orb.vTheta = 0; state.orb.vPhi = 0; state.orb.vPanX = 0; state.orb.vPanY = 0;
+    return true;
+  };
+  V.deletePov = function (id) {
+    const list = V.listPov().filter(function (x) { return x.id !== id; });
+    try { localStorage.setItem(POV_KEY, JSON.stringify(list)); } catch (e) {}
+    return list;
+  };
+
+  /* ---- Export GLB (minimal, mesh only) ---- */
+  V.exportGLB = function () {
+    if (!state.root) return null;
+    // kumpulkan mesh world-transformed
+    const meshes = [];
+    function collect(obj) {
+      obj.updateMatrixWorld(true);
+      obj.traverse(function (o) {
+        if (!o.isMesh || !o.geometry) return;
+        if (o.userData && o.userData.__boneHelper) return;
+        if (o.geometry.type === 'SphereGeometry') return;
+        const g = o.geometry.clone();
+        g.applyMatrix4(o.matrixWorld);
+        meshes.push({ geometry: g, material: o.material });
+      });
+    }
+    collect(state.root);
+    (state.combinedRoots || []).forEach(collect);
+    if (!meshes.length) return null;
+
+    // merge positions/normals/uvs into one buffer
+    let vCount = 0;
+    meshes.forEach(function (m) {
+      const pos = m.geometry.getAttribute('position');
+      if (pos) vCount += pos.count;
+    });
+    const positions = new Float32Array(vCount * 3);
+    const normals = new Float32Array(vCount * 3);
+    const uvs = new Float32Array(vCount * 2);
+    let hasN = false, hasUv = false, cursor = 0;
+    meshes.forEach(function (m) {
+      const pos = m.geometry.getAttribute('position');
+      const nrm = m.geometry.getAttribute('normal');
+      const uv = m.geometry.getAttribute('uv');
+      if (!pos) return;
+      for (let i = 0; i < pos.count; i++) {
+        positions[cursor * 3] = pos.getX(i);
+        positions[cursor * 3 + 1] = pos.getY(i);
+        positions[cursor * 3 + 2] = pos.getZ(i);
+        if (nrm) {
+          hasN = true;
+          normals[cursor * 3] = nrm.getX(i);
+          normals[cursor * 3 + 1] = nrm.getY(i);
+          normals[cursor * 3 + 2] = nrm.getZ(i);
+        }
+        if (uv) {
+          hasUv = true;
+          uvs[cursor * 2] = uv.getX(i);
+          uvs[cursor * 2 + 1] = uv.getY(i);
+        }
+        cursor++;
+      }
+      m.geometry.dispose();
+    });
+
+    // build GLB: JSON + BIN
+    const binParts = [];
+    let binSize = 0;
+    function align4(n) { return (n + 3) & ~3; }
+    function addBuffer(arr) {
+      const u8 = new Uint8Array(arr.buffer, arr.byteOffset, arr.byteLength);
+      const pad = align4(u8.byteLength) - u8.byteLength;
+      binParts.push(u8);
+      if (pad) binParts.push(new Uint8Array(pad));
+      const offset = binSize;
+      binSize += u8.byteLength + pad;
+      return { byteOffset: offset, byteLength: u8.byteLength };
+    }
+    const posInfo = addBuffer(positions);
+    const accessors = [{
+      bufferView: 0, componentType: 5126, count: vCount, type: 'VEC3',
+      max: [positions[0], positions[1], positions[2]],
+      min: [positions[0], positions[1], positions[2]]
+    }];
+    // compute min/max
+    for (let i = 0; i < vCount; i++) {
+      const x = positions[i * 3], y = positions[i * 3 + 1], z = positions[i * 3 + 2];
+      if (x > accessors[0].max[0]) accessors[0].max[0] = x;
+      if (y > accessors[0].max[1]) accessors[0].max[1] = y;
+      if (z > accessors[0].max[2]) accessors[0].max[2] = z;
+      if (x < accessors[0].min[0]) accessors[0].min[0] = x;
+      if (y < accessors[0].min[1]) accessors[0].min[1] = y;
+      if (z < accessors[0].min[2]) accessors[0].min[2] = z;
+    }
+    const bufferViews = [{ buffer: 0, byteOffset: posInfo.byteOffset, byteLength: posInfo.byteLength, target: 34962 }];
+    const attributes = { POSITION: 0 };
+    if (hasN) {
+      const nInfo = addBuffer(normals);
+      bufferViews.push({ buffer: 0, byteOffset: nInfo.byteOffset, byteLength: nInfo.byteLength, target: 34962 });
+      accessors.push({ bufferView: bufferViews.length - 1, componentType: 5126, count: vCount, type: 'VEC3' });
+      attributes.NORMAL = accessors.length - 1;
+    }
+    if (hasUv) {
+      const uInfo = addBuffer(uvs);
+      bufferViews.push({ buffer: 0, byteOffset: uInfo.byteOffset, byteLength: uInfo.byteLength, target: 34962 });
+      accessors.push({ bufferView: bufferViews.length - 1, componentType: 5126, count: vCount, type: 'VEC2' });
+      attributes.TEXCOORD_0 = accessors.length - 1;
+    }
+    const gltf = {
+      asset: { version: '2.0', generator: 'MC Addon Inspector' },
+      buffers: [{ byteLength: binSize }],
+      bufferViews: bufferViews,
+      accessors: accessors,
+      materials: [{ name: 'default', pbrMetallicRoughness: { baseColorFactor: [0.8, 0.85, 0.8, 1], metallicFactor: 0.1, roughnessFactor: 0.85 } }],
+      meshes: [{ primitives: [{ attributes: attributes, material: 0, mode: 4 }] }],
+      nodes: [{ mesh: 0, name: (state.detail && state.detail.name) || 'model' }],
+      scenes: [{ nodes: [0] }],
+      scene: 0
+    };
+    const json = JSON.stringify(gltf);
+    const jsonPad = align4(json.length) - json.length;
+    const jsonBytes = new Uint8Array(json.length + jsonPad);
+    for (let i = 0; i < json.length; i++) jsonBytes[i] = json.charCodeAt(i) & 0xff;
+    // BIN chunk
+    const binBody = new Uint8Array(binSize);
+    let off = 0;
+    binParts.forEach(function (p) { binBody.set(p, off); off += p.byteLength; });
+
+    // GLB header + chunks
+    const totalLen = 12 + 8 + jsonBytes.byteLength + 8 + binBody.byteLength;
+    const out = new ArrayBuffer(totalLen);
+    const view = new DataView(out);
+    const u8 = new Uint8Array(out);
+    // header
+    view.setUint32(0, 0x46546C67, true); // glTF
+    view.setUint32(4, 2, true);
+    view.setUint32(8, totalLen, true);
+    // JSON chunk
+    view.setUint32(12, jsonBytes.byteLength, true);
+    view.setUint32(16, 0x4E4F534A, true); // JSON
+    u8.set(jsonBytes, 20);
+    // BIN chunk
+    const binChunkStart = 20 + jsonBytes.byteLength;
+    view.setUint32(binChunkStart, binBody.byteLength, true);
+    view.setUint32(binChunkStart + 4, 0x004E4942, true); // BIN
+    u8.set(binBody, binChunkStart + 8);
+    return out;
+  };
+
   // default POV grid: 3/4 kiri dari atas (seperti screenshot)
   state.galleryCam = { theta: Math.PI * 0.72, phi: 1.12 };
   V.saveGalleryCam = function () {
@@ -4185,10 +4526,33 @@ autoRotate: false,
     }
     if (state.autoRotate) o.theta += dt * 0.35;
     if (state.anim && state.playing) {
-      state.time += dt * state.speed;
       const len = Math.max(0.001, state.anim.length || 1);
-      // selalu loop
-      if (state.time >= len) state.time = state.time % len;
+      const dir = state.animDir || 1;
+      const mode = state.animLoopMode || 'pingpong'; // 'pingpong' | 'forward'
+      const prevDir = dir;
+      state.time += dt * state.speed * dir;
+      if (mode === 'pingpong') {
+        // normal → reverse → normal … tanpa loncat pose
+        if (state.time >= len) {
+          state.time = len;
+          state.animDir = -1;
+        } else if (state.time <= 0) {
+          state.time = 0;
+          state.animDir = 1;
+        }
+        // audio hanya saat arah benar-benar berbalik (sekali per ujung)
+        if (state.animDir !== prevDir) {
+          try { playAnimLinkedSound(state.anim); } catch (e) {}
+        }
+      } else {
+        // forward loop klasik
+        if (state.time >= len) {
+          state.time = state.time % len;
+          try { playAnimLinkedSound(state.anim); } catch (e) {}
+        } else if (state.time < 0) {
+          state.time = ((state.time % len) + len) % len;
+        }
+      }
       applyPose(state.anim, state.time);
     }
     updateCamera();
@@ -4229,6 +4593,10 @@ autoRotate: false,
     state.textures = [{ path: loaded.path, tex: texture, slot: loaded.slot }];
     state.currentTexture = loaded.path;
     state.textureIndex = index;
+    // re-apply hue jika sedang aktif
+    if (state.textureHue && state.textureHue % 360 !== 0) {
+      try { applyTextureHue(); } catch (e) {}
+    }
     // 1:1 slot — ganti geometry ke slot yang sama jika ada
     try {
       const slot = String(loaded.slot || '').toLowerCase().replace(/^texture\./, '');
@@ -4415,6 +4783,108 @@ autoRotate: false,
     return state.combined;
   };
   V.isCombined = function () { return !!state.combined; };
+  // expose internal helpers for UI combine panel
+  V.buildModel = function (geoDef, material) { return buildModel(geoDef, material); };
+  V.applyPose = function (anim, time) { return applyPose(anim, time); };
+  V.setModelHeight = function (y) {
+    state.modelHeightOffset = Number(y) || 0;
+    if (state.root) state.root.position.y = state.modelHeightOffset;
+    (state.combinedRoots || []).forEach(function (r) {
+      try { r.position.y = state.modelHeightOffset; } catch (e) {}
+    });
+  };
+  V.getModelHeight = function () { return state.modelHeightOffset || 0; };
+  V.setTextureHue = function (deg) {
+    state.textureHue = ((Number(deg) || 0) % 360 + 360) % 360;
+    applyTextureHue();
+  };
+  V.getTextureHue = function () { return state.textureHue || 0; };
+  V.downloadCurrentTexture = function (fmt) {
+    try {
+      const mat = state.materials && state.materials[0];
+      const tex = mat && mat.map;
+      if (!tex || !tex.image) return null;
+      const img = tex.image;
+      const c = document.createElement('canvas');
+      c.width = img.width || img.naturalWidth || 64;
+      c.height = img.height || img.naturalHeight || 64;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0);
+      if (state.textureHue && state.textureHue % 360 !== 0) {
+        // image already has hue applied when using applyTextureHue path
+      }
+      const type = (fmt === 'jpg' || fmt === 'jpeg') ? 'image/jpeg' : 'image/png';
+      const quality = type === 'image/jpeg' ? 0.92 : undefined;
+      return c.toDataURL(type, quality);
+    } catch (e) { return null; }
+  };
+  function hueShiftImageData(imageData, deg) {
+    const d = imageData.data;
+    const h = ((deg % 360) + 360) % 360 / 360;
+    for (let i = 0; i < d.length; i += 4) {
+      let r = d[i] / 255, g = d[i + 1] / 255, b = d[i + 2] / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let hh, s, l = (max + min) / 2;
+      if (max === min) { hh = s = 0; }
+      else {
+        const delta = max - min;
+        s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+        if (max === r) hh = ((g - b) / delta + (g < b ? 6 : 0)) / 6;
+        else if (max === g) hh = ((b - r) / delta + 2) / 6;
+        else hh = ((r - g) / delta + 4) / 6;
+      }
+      hh = (hh + h) % 1;
+      if (s === 0) { r = g = b = l; }
+      else {
+        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        const p = 2 * l - q;
+        const hue2rgb = function (p, q, t) {
+          if (t < 0) t += 1; if (t > 1) t -= 1;
+          if (t < 1 / 6) return p + (q - p) * 6 * t;
+          if (t < 1 / 2) return q;
+          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+          return p;
+        };
+        r = hue2rgb(p, q, hh + 1 / 3);
+        g = hue2rgb(p, q, hh);
+        b = hue2rgb(p, q, hh - 1 / 3);
+      }
+      d[i] = Math.round(r * 255);
+      d[i + 1] = Math.round(g * 255);
+      d[i + 2] = Math.round(b * 255);
+    }
+  }
+  function applyTextureHue() {
+    try {
+      const mat = state.materials && state.materials[0];
+      if (!mat || !mat.map) return;
+      const tex = mat.map;
+      if (!tex.userData) tex.userData = {};
+      if (!tex.userData.origImage && tex.image) {
+        const src = tex.image;
+        const c = document.createElement('canvas');
+        c.width = src.width || src.naturalWidth || 64;
+        c.height = src.height || src.naturalHeight || 64;
+        const ctx = c.getContext('2d');
+        ctx.drawImage(src, 0, 0);
+        tex.userData.origImage = c;
+      }
+      const orig = tex.userData.origImage;
+      if (!orig) return;
+      const out = document.createElement('canvas');
+      out.width = orig.width; out.height = orig.height;
+      const octx = out.getContext('2d');
+      octx.drawImage(orig, 0, 0);
+      if (state.textureHue && state.textureHue % 360 !== 0) {
+        const id = octx.getImageData(0, 0, out.width, out.height);
+        hueShiftImageData(id, state.textureHue);
+        octx.putImageData(id, 0, 0);
+      }
+      tex.image = out;
+      tex.needsUpdate = true;
+      mat.needsUpdate = true;
+    } catch (e) { console.warn('hue apply', e); }
+  }
 
   V.getFilteredTextureVariants = function () {
     if (!state.detail) return [];
@@ -4468,10 +4938,10 @@ autoRotate: false,
     if (!state.autoPlaySounds) return; // bisa di-toggle di UI
     const snd = findSoundForAnim(anim);
     if (snd) {
-        // ambil file ogg pertama yang playable
+        // ambil file ogg pertama yang playable — loop = true karena animasi viewer selalu loop
         for (const f of snd.files) {
             if (f.file && /\.(ogg|wav|mp3)$/i.test(f.file.path)) {
-                if (MC.ui && MC.ui.playAudio) MC.ui.playAudio(f.file);
+                if (MC.ui && MC.ui.playAudio) MC.ui.playAudio(f.file, { loop: true, silentToast: true });
                 break;
             }
         }
@@ -4797,12 +5267,10 @@ autoRotate: false,
 
       function closeAllPopups() {
         closeBgMenu();
-        const fp = document.getElementById('floorPanel');
-        const lp = document.getElementById('lightPanel');
-        const cp = document.getElementById('combinePanel');
-        if (fp) fp.classList.remove('on');
-        if (lp) lp.classList.remove('on');
-        if (cp) cp.classList.remove('on');
+        ['floorPanel', 'lightPanel', 'combinePanel', 'huePanel', 'povPanel', 'comparePanel'].forEach(function (id) {
+          const el = document.getElementById(id);
+          if (el) el.classList.remove('on');
+        });
       }
       function toggleFloorPanel() {
         const fp = document.getElementById('floorPanel');
@@ -4815,7 +5283,8 @@ autoRotate: false,
       if (floorClose) floorClose.onclick = function (e) { e.stopPropagation(); closeAllPopups(); };
       const lightClose = document.getElementById('lightClose');
       if (lightClose) lightClose.onclick = function (e) { e.stopPropagation(); closeAllPopups(); };
-      
+      const hueClose = document.getElementById('hueClose');
+      if (hueClose) hueClose.onclick = function (e) { e.stopPropagation(); closeAllPopups(); };
       const combineClose = document.getElementById('combineClose');
       if (combineClose) combineClose.onclick = function (e) { e.stopPropagation(); closeAllPopups(); };
 
@@ -4851,15 +5320,287 @@ autoRotate: false,
       if (shOp) shOp.oninput = function () {
         if (V.setShadowOpacity) V.setShadowOpacity(parseFloat(shOp.value));
       };
+      // ketinggian model (pijakan)
+      const mh = document.getElementById('modelHeight');
+      const mhVal = document.getElementById('modelHeightVal');
+      if (mh) {
+        mh.oninput = function () {
+          const v = parseFloat(mh.value) || 0;
+          if (mhVal) mhVal.textContent = String(v);
+          if (V.setModelHeight) V.setModelHeight(v);
+        };
+      }
+      // hue panel
+      const fsHue = document.getElementById('fsHue');
+      if (fsHue) fsHue.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const hp = document.getElementById('huePanel');
+        if (!hp) return;
+        const open = !hp.classList.contains('on');
+        closeAllPopups();
+        if (open) {
+          hp.classList.add('on');
+          const hs = document.getElementById('hueSlider');
+          const hv = document.getElementById('hueVal');
+          if (hs && V.getTextureHue) {
+            hs.value = String(V.getTextureHue() || 0);
+            if (hv) hv.textContent = (V.getTextureHue() || 0) + '°';
+          }
+        }
+      };
+      const hueSlider = document.getElementById('hueSlider');
+      const hueVal = document.getElementById('hueVal');
+      if (hueSlider) hueSlider.oninput = function () {
+        const v = parseInt(hueSlider.value, 10) || 0;
+        if (hueVal) hueVal.textContent = v + '°';
+        if (V.setTextureHue) V.setTextureHue(v);
+      };
+      const hueReset = document.getElementById('hueReset');
+      if (hueReset) hueReset.onclick = function (e) {
+        e.stopPropagation();
+        if (hueSlider) hueSlider.value = '0';
+        if (hueVal) hueVal.textContent = '0°';
+        if (V.setTextureHue) V.setTextureHue(0);
+      };
+      function dlTex(fmt) {
+        if (!V.downloadCurrentTexture) return;
+        const data = V.downloadCurrentTexture(fmt);
+        if (!data) { U.toast('Tekstur tidak tersedia'); return; }
+        const a = document.createElement('a');
+        const nm = (S.selected ? String(S.selected).replace(/[:\/]/g, '_') : 'texture');
+        a.href = data;
+        a.download = nm + '_hue' + (V.getTextureHue ? V.getTextureHue() : 0) + '.' + (fmt === 'jpg' ? 'jpg' : 'png');
+        a.click();
+        U.toast('Tekstur diunduh');
+      }
+      const hueDlPng = document.getElementById('hueDlPng');
+      if (hueDlPng) hueDlPng.onclick = function (e) { e.stopPropagation(); dlTex('png'); };
+      const hueDlJpg = document.getElementById('hueDlJpg');
+      if (hueDlJpg) hueDlJpg.onclick = function (e) { e.stopPropagation(); dlTex('jpg'); };
+
+      // pure fullscreen (hanya model + tombol X)
+      const fsPure = document.getElementById('fsPure');
+      const fsVeilEl = document.getElementById('fsVeil');
+      const fsPureClose = document.getElementById('fsPureClose');
+      if (fsPure && fsVeilEl) fsPure.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closeAllPopups();
+        fsVeilEl.classList.add('pure');
+        U.toast('Mode pure — klik ✕ untuk keluar', 2000);
+      };
+      if (fsPureClose && fsVeilEl) fsPureClose.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        fsVeilEl.classList.remove('pure');
+      };
+
+      // bone highlight
+      const fsBones = document.getElementById('fsBones');
+      if (fsBones) {
+        fsBones.classList.toggle('on', !!(V.getBoneHighlight && V.getBoneHighlight()));
+        fsBones.onclick = function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          const on = V.toggleBoneHighlight ? V.toggleBoneHighlight() : false;
+          fsBones.classList.toggle('on', on);
+          U.toast(on ? 'Skeleton ON' : 'Skeleton OFF');
+        };
+      }
+
+      // export GLB
+      const fsExport = document.getElementById('fsExport');
+      if (fsExport) fsExport.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!V.exportGLB) { U.toast('Export tidak tersedia'); return; }
+        const buf = V.exportGLB();
+        if (!buf) { U.toast('Tidak ada model untuk di-export'); return; }
+        const blob = new Blob([buf], { type: 'model/gltf-binary' });
+        const a = document.createElement('a');
+        const nm = (S.selected ? String(S.selected).replace(/[:\/]/g, '_') : 'model');
+        a.href = URL.createObjectURL(blob);
+        a.download = nm + '.glb';
+        a.click();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000);
+        U.toast('GLB diunduh: ' + nm + '.glb');
+      };
+
+      // POV bookmarks
       const fsSavePov = document.getElementById('fsSavePov');
+      if (fsSavePov) fsSavePov.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!V.savePov) return;
+        const label = (S.selected ? String(S.selected).split(':').pop() : 'POV') + ' · ' + new Date().toLocaleTimeString();
+        V.savePov(label);
+        U.toast('POV disimpan');
+      };
+      function renderPovList() {
+        const list = document.getElementById('povList');
+        if (!list || !V.listPov) return;
+        const items = V.listPov();
+        list.innerHTML = '';
+        if (!items.length) {
+          list.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px">Belum ada POV tersimpan.</div>';
+          return;
+        }
+        items.forEach(function (it) {
+          const row = document.createElement('div');
+          row.className = 'pov-item';
+          row.innerHTML = '<span class="nm" title="' + esc(it.label) + '">' + esc(it.label) + '</span>'
+            + '<button type="button" class="del" title="Hapus">✕</button>';
+          row.querySelector('.nm').onclick = function () {
+            V.applyPov(it);
+            U.toast('POV diterapkan');
+          };
+          row.querySelector('.del').onclick = function (ev) {
+            ev.stopPropagation();
+            V.deletePov(it.id);
+            renderPovList();
+          };
+          list.appendChild(row);
+        });
+      }
+      const fsPovList = document.getElementById('fsPovList');
+      if (fsPovList) fsPovList.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const pp = document.getElementById('povPanel');
+        if (!pp) return;
+        const open = !pp.classList.contains('on');
+        closeAllPopups();
+        if (open) { pp.classList.add('on'); renderPovList(); }
+      };
+      const povClose = document.getElementById('povClose');
+      if (povClose) povClose.onclick = function (e) { e.stopPropagation(); closeAllPopups(); };
+
+      // compare entities
+      const fsCompare = document.getElementById('fsCompare');
+      if (fsCompare) fsCompare.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const cp = document.getElementById('comparePanel');
+        const sel = document.getElementById('compareSelect');
+        if (!cp || !sel) return;
+        const open = !cp.classList.contains('on');
+        closeAllPopups();
+        if (open) {
+          cp.classList.add('on');
+          sel.innerHTML = '';
+          (S.entities || []).forEach(function (ent) {
+            if (ent.id === S.selected) return;
+            const o = document.createElement('option');
+            o.value = ent.id;
+            o.textContent = ent.name + ' (' + ent.id + ')';
+            sel.appendChild(o);
+          });
+          if (!sel.options.length) {
+            const o = document.createElement('option');
+            o.value = '';
+            o.textContent = '(tidak ada entitas lain)';
+            sel.appendChild(o);
+          }
+        }
+      };
+      const compareClose = document.getElementById('compareClose');
+      if (compareClose) compareClose.onclick = function (e) { e.stopPropagation(); closeAllPopups(); };
+      const applyCompare = document.getElementById('applyCompare');
+      if (applyCompare) applyCompare.onclick = async function (e) {
+        e.stopPropagation();
+        const sel = document.getElementById('compareSelect');
+        const id = sel && sel.value;
+        if (!id) { U.toast('Pilih entitas dulu'); return; }
+        // simpan id bandingkan, load model kedua di samping
+        try {
+          await loadCompareEntity(id);
+          closeAllPopups();
+          U.toast('Mode bandingkan aktif');
+        } catch (err) {
+          U.toast('Gagal bandingkan: ' + (err.message || err));
+        }
+      };
+      const clearCompareBtn = document.getElementById('clearCompare');
+      if (clearCompareBtn) clearCompareBtn.onclick = function (e) {
+        e.stopPropagation();
+        clearCompareEntity();
+        closeAllPopups();
+        U.toast('Bandingkan dilepas');
+      };
+
+      async function loadCompareEntity(id) {
+        clearCompareEntity();
+        const d = AN.detail(id);
+        if (!d || !d.model || !d.model.def) throw new Error('Model tidak ditemukan');
+        const mat = (V.state.materials && V.state.materials[0])
+          ? V.state.materials[0].clone()
+          : new THREE.MeshLambertMaterial({ color: 0x88aacc });
+        // coba pakai tekstur milik entity bandingkan
+        try {
+          if (d.textures && d.textures[0] && d.textures[0].file && V.state && MC.viewer) {
+            // fallback: pakai material abu
+          }
+        } catch (e) {}
+        if (!V.buildModel) throw new Error('buildModel tidak tersedia');
+        const built = V.buildModel(d.model.def, mat);
+        built.wrap.scale.x = -1;
+        built.wrap.__bones = built.bones;
+        // geser ke kanan
+        const box = new THREE.Box3().setFromObject(built.wrap);
+        const size = box.getSize(new THREE.Vector3());
+        const mainBox = V.state.bbox || new THREE.Box3().setFromObject(V.state.root);
+        const mainSize = mainBox.getSize(new THREE.Vector3());
+        const gap = Math.max(mainSize.x, size.x, 8) * 1.4;
+        built.wrap.position.x = gap;
+        V.state.modelWrap.add(built.wrap);
+        V.state.compareRoot = built.wrap;
+        V.state.compareId = id;
+        // perlebar kamera
+        if (V.state.orb) {
+          V.state.orb.target.x = gap * 0.5;
+          V.state.orb.dist = Math.max(V.state.orb.dist, gap * 2.2);
+        }
+        const sub = document.getElementById('fsSub');
+        if (sub) sub.textContent = (S.selected || '') + '  vs  ' + id;
+      }
+      function clearCompareEntity() {
+        if (V.state.compareRoot) {
+          try {
+            if (V.state.compareRoot.parent) V.state.compareRoot.parent.remove(V.state.compareRoot);
+            V.state.compareRoot.traverse(function (o) {
+              if (o.geometry) o.geometry.dispose();
+              if (o.material && o.material !== (V.state.materials && V.state.materials[0])) {
+                if (Array.isArray(o.material)) o.material.forEach(function (m) { m.dispose(); });
+                else o.material.dispose();
+              }
+            });
+          } catch (e) {}
+          V.state.compareRoot = null;
+          V.state.compareId = null;
+        }
+        if (V.state.orb && V.state.bbox) {
+          const c = V.state.bbox.getCenter(new THREE.Vector3());
+          V.state.orb.target.x = c.x;
+        }
+      }
+      UI.clearCompareEntity = clearCompareEntity;
 
       const fsSound = document.getElementById('fsSound');
       if (fsSound) {
-        fsSound.classList.toggle('on', V.state.autoPlaySounds);
-        fsSound.onclick = function() {
-            V.state.autoPlaySounds = !V.state.autoPlaySounds;
-            fsSound.classList.toggle('on', V.state.autoPlaySounds);
-            U.toast('Suara otomatis: ' + (V.state.autoPlaySounds ? 'ON' : 'OFF'));
+        fsSound.classList.toggle('on', !!V.state.autoPlaySounds);
+        fsSound.onclick = function () {
+          V.state.autoPlaySounds = !V.state.autoPlaySounds;
+          fsSound.classList.toggle('on', !!V.state.autoPlaySounds);
+          if (!V.state.autoPlaySounds) {
+            // benar-benar hentikan audio yang sedang jalan
+            try { if (typeof stopAnimAudio === 'function') stopAnimAudio(); } catch (e) {}
+            try { if (MC.ui && MC.ui.stopAnimAudio) MC.ui.stopAnimAudio(); } catch (e) {}
+            try {
+              if (S.audio) { S.audio.pause(); S.audio.src = ''; S.audio = null; }
+            } catch (e) {}
+          }
+          U.toast('Suara otomatis: ' + (V.state.autoPlaySounds ? 'ON' : 'OFF'));
         };
       }
 
@@ -4870,80 +5611,121 @@ autoRotate: false,
         const cp = document.getElementById('combinePanel');
         const list = document.getElementById('combineList');
         if (!cp || !list) return;
+        if (!V.state || !V.state.detail) { U.toast('Belum ada model'); return; }
         const open = !cp.classList.contains('on');
         closeAllPopups();
         if (open) {
           cp.classList.add('on');
           list.innerHTML = '';
-          
           const geos = V.state.detail.geometryVariants || [];
           const mainIdx = V.state.geometryIndex || 0;
-          geos.forEach(function(g, i) {
-             if (i === mainIdx) return;
-             const lbl = document.createElement('label');
-             lbl.innerHTML = '<input type="checkbox" value="' + i + '"> ' + esc(g.slot || g.id);
-             list.appendChild(lbl);
+          const armorRe = /armor|saddle|charged|collar|costume|gear|helmet|chest|leggings|boots/;
+          let count = 0;
+          geos.forEach(function (g, i) {
+            if (i === mainIdx) return;
+            const slot = String(g.slot || g.id || ('geo' + i));
+            const isArm = armorRe.test(slot.toLowerCase());
+            const lbl = document.createElement('label');
+            const checked = (V.state.combinedRoots || []).some(function (r) {
+              return r && r.__geoIndex === i;
+            });
+            lbl.innerHTML = '<input type="checkbox" value="' + i + '"' + (checked ? ' checked' : '') + '> '
+              + (isArm ? '🛡 ' : '') + esc(slot)
+              + (g.cubes != null ? ' <span style="opacity:.55;font-size:10px">(' + g.cubes + ' cube)</span>' : '');
+            list.appendChild(lbl);
+            count++;
           });
-        }
-      };
-      
-      const applyCombine = document.getElementById('applyCombine');
-      if (applyCombine) applyCombine.onclick = async function(e) {
-          e.stopPropagation();
-          const list = document.getElementById('combineList');
-          const checked = Array.from(list.querySelectorAll('input:checked')).map(x => parseInt(x.value, 10));
-          
-          // clear existing
-          (V.state.combinedRoots || []).forEach(function (r) {
-            try { if (r.parent) r.parent.remove(r); disposeNode(r); } catch (err) {}
-          });
-          V.state.combinedRoots = [];
-          V.state.combined = false;
-          
-          if (checked.length) {
-              const mat = (V.state.materials && V.state.materials[0]) || new THREE.MeshLambertMaterial({ color: 0xcccccc });
-              const geos = V.state.detail.geometryVariants || [];
-              for (let i of checked) {
-                  const g = geos[i];
-                  if (!g.def) continue;
-                  try {
-                      const built = V.state.builder(g.def, mat); // need to expose buildModel
-                      // fallback if not exposed:
-                      // we can just use V.state.buildModel which we'll expose
-                      const wrap = V.buildModel ? V.buildModel(g.def, mat).wrap : null;
-                      if (wrap) {
-                          wrap.scale.x = -1;
-                          wrap.__bones = V.buildModel(g.def, mat).bones;
-                          V.state.modelWrap.add(wrap);
-                          V.state.combinedRoots.push(wrap);
-                      }
-                  } catch (err) { console.error(err); }
-              }
-              V.state.combined = V.state.combinedRoots.length > 0;
-              if (V.state.anim) V.applyPose(V.state.anim, V.state.time); // need to expose applyPose
+          if (!count) {
+            list.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px">Tidak ada geometry tambahan (armor/saddle/dll) di entitas ini.</div>';
           }
-          
-          document.getElementById('combinePanel').classList.remove('on');
-          U.toast('Model diperbarui');
+        }
       };
 
-      if (fsSavePov) fsSavePov.onclick = function (e) {
-        e.preventDefault();
+      const applyCombine = document.getElementById('applyCombine');
+      if (applyCombine) applyCombine.onclick = async function (e) {
         e.stopPropagation();
-        if (!V.saveGalleryCam) return;
-        V.saveGalleryCam();
-        U.toast('POV grid disimpan — regenerate preview…');
-        // regenerate thumbs dengan sudut baru
-        if (gallery && gallery.classList.contains('on') && vgGrid && S.galleryList) {
-          const cards = [];
-          Array.prototype.forEach.call(vgGrid.children, function (card, idx) {
-            if (S.galleryList[idx]) cards.push({ card: card, item: S.galleryList[idx], idx: idx });
-            const thumb = card.querySelector('.thumb');
-            if (thumb) thumb.innerHTML = '<div class="ph">3D…</div>';
-          });
-          if (cards.length && typeof fill3dThumbs === 'function') fill3dThumbs(cards);
+        const list = document.getElementById('combineList');
+        if (!list || !V.state || !V.state.detail) return;
+        const checked = Array.from(list.querySelectorAll('input:checked')).map(function (x) {
+          return parseInt(x.value, 10);
+        }).filter(function (n) { return !isNaN(n); });
+
+        // clear existing combined
+        (V.state.combinedRoots || []).forEach(function (r) {
+          try {
+            if (r.parent) r.parent.remove(r);
+            // dispose recursively
+            r.traverse(function (o) {
+              if (o.geometry) o.geometry.dispose();
+              if (o.material) {
+                if (Array.isArray(o.material)) o.material.forEach(function (m) { if (m && m !== V.state.materials[0]) m.dispose(); });
+                else if (o.material !== V.state.materials[0]) o.material.dispose();
+              }
+            });
+          } catch (err) {}
+        });
+        V.state.combinedRoots = [];
+        V.state.combined = false;
+
+        if (checked.length && V.buildModel) {
+          const mat = (V.state.materials && V.state.materials[0]) || new THREE.MeshLambertMaterial({ color: 0xcccccc });
+          const geos = V.state.detail.geometryVariants || [];
+          const hOff = V.state.modelHeightOffset || 0;
+          for (let i = 0; i < checked.length; i++) {
+            const gi = checked[i];
+            const g = geos[gi];
+            if (!g || !g.def) continue;
+            try {
+              const built = V.buildModel(g.def, mat);
+              if (!built || !built.wrap) continue;
+              built.wrap.scale.x = -1;
+              built.wrap.__bones = built.bones;
+              built.wrap.__geoIndex = gi;
+              built.wrap.position.y = hOff;
+              built.wrap.traverse(function (o) {
+                if (o.isMesh) { o.castShadow = true; o.receiveShadow = false; }
+              });
+              V.state.modelWrap.add(built.wrap);
+              V.state.combinedRoots.push(built.wrap);
+            } catch (err) { console.error(err); }
+          }
+          V.state.combined = V.state.combinedRoots.length > 0;
+          if (V.state.anim && V.applyPose) V.applyPose(V.state.anim, V.state.time);
         }
+
+        document.getElementById('combinePanel').classList.remove('on');
+        U.toast(V.state.combined ? ('Armor/model digabung (' + V.state.combinedRoots.length + ')') : 'Gabungan dilepas');
       };
+
+      // jangan overwrite fsSavePov — sudah di-wire di atas untuk bookmark + gallery
+      // (handler lama digabung)
+      const fsSavePovBtn = document.getElementById('fsSavePov');
+      if (fsSavePovBtn) {
+        const prev = fsSavePovBtn.onclick;
+        fsSavePovBtn.onclick = function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          // bookmark POV
+          if (V.savePov) {
+            const label = (S.selected ? String(S.selected).split(':').pop() : 'POV') + ' · ' + new Date().toLocaleTimeString();
+            V.savePov(label);
+          }
+          // juga simpan untuk grid thumbnail
+          if (V.saveGalleryCam) {
+            V.saveGalleryCam();
+            if (gallery && gallery.classList.contains('on') && vgGrid && S.galleryList) {
+              const cards = [];
+              Array.prototype.forEach.call(vgGrid.children, function (card, idx) {
+                if (S.galleryList[idx]) cards.push({ card: card, item: S.galleryList[idx], idx: idx });
+                const thumb = card.querySelector('.thumb');
+                if (thumb) thumb.innerHTML = '<div class="ph">3D…</div>';
+              });
+              if (cards.length && typeof fill3dThumbs === 'function') fill3dThumbs(cards);
+            }
+          }
+          U.toast('POV disimpan (bookmark + grid)');
+        };
+      }
     }, 0);
 
     /* ---- variant gallery (tampilan utama saat entitas diklik) ---- */
@@ -5226,6 +6008,7 @@ autoRotate: false,
       if (fsCanvasParent) fsCanvasParent.insertBefore(canvas, fsCanvasParent.firstChild);
       else if (vp) vp.insertBefore(canvas, vp.firstChild);
       veil.classList.remove('on');
+      veil.classList.remove('pure');
       fsOn = false;
       const lp = document.getElementById('lightPanel');
       if (lp) lp.classList.remove('on');
@@ -5233,6 +6016,8 @@ autoRotate: false,
       if (fp) fp.classList.remove('on');
       const cp = document.getElementById('combinePanel');
       if (cp) cp.classList.remove('on');
+      const hp = document.getElementById('huePanel');
+      if (hp) hp.classList.remove('on');
       closeBgMenu();
       // kalau gallery masih terbuka, sembunyikan canvas lagi
       if (gallery && gallery.classList.contains('on')) canvas.classList.add('dimmed');
@@ -5427,6 +6212,47 @@ autoRotate: false,
       if (!playing) { try { stopAnimAudio(); } catch (e) {} }
       else if (V.state.anim) { try { V.playAnimLinkedSound(V.state.anim); } catch (e) {} }
     };
+    // kecepatan animasi
+    const fsSpeed = document.getElementById('fsSpeed');
+    const fsSpeedLabel = document.getElementById('fsSpeedLabel');
+    function syncSpeedUi() {
+      const sp = V.getSpeed ? V.getSpeed() : (V.state.speed || 1);
+      if (fsSpeed) fsSpeed.value = String(sp);
+      if (fsSpeedLabel) fsSpeedLabel.textContent = (Math.round(sp * 100) / 100) + '×';
+    }
+    if (fsSpeed) {
+      fsSpeed.oninput = function () {
+        const v = parseFloat(fsSpeed.value) || 1;
+        V.setSpeed(v);
+        if (fsSpeedLabel) fsSpeedLabel.textContent = (Math.round(v * 100) / 100) + '×';
+      };
+      syncSpeedUi();
+    }
+    // mode loop: pingpong (default) ↔ forward
+    const fsLoopMode = document.getElementById('fsLoopMode');
+    function syncLoopModeUi() {
+      if (!fsLoopMode) return;
+      const mode = V.getAnimLoopMode ? V.getAnimLoopMode() : 'pingpong';
+      fsLoopMode.classList.toggle('on', mode === 'pingpong');
+      fsLoopMode.title = mode === 'pingpong'
+        ? 'Loop: Normal ↔ Reverse (klik untuk maju saja)'
+        : 'Loop: Maju saja (klik untuk Normal ↔ Reverse)';
+      fsLoopMode.textContent = mode === 'pingpong' ? '⇄' : '→';
+    }
+    if (fsLoopMode) {
+      fsLoopMode.onclick = function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const cur = V.getAnimLoopMode ? V.getAnimLoopMode() : 'pingpong';
+        const next = cur === 'pingpong' ? 'forward' : 'pingpong';
+        V.setAnimLoopMode(next);
+        syncLoopModeUi();
+        U.toast(next === 'pingpong' ? 'Loop: Normal ↔ Reverse' : 'Loop: Maju saja');
+      };
+      // default pingpong
+      if (V.setAnimLoopMode) V.setAnimLoopMode('pingpong');
+      syncLoopModeUi();
+    }
     const fsGridBtn = document.getElementById('fsGrid');
     if (fsGridBtn) fsGridBtn.onclick = function () {
       const on = !V.state.grid.visible; V.setGrid(on);
@@ -5777,12 +6603,53 @@ autoRotate: false,
 
   function renderEntityList(body) {
     const q = S.filter;
-    const list = q ? S.entities.filter(function (e) { return e.search.indexOf(q) >= 0; }) : S.entities;
+    if (!S.familyFilter) S.familyFilter = '';
+    // kumpulkan family unik
+    const famSet = new Map();
+    S.entities.forEach(function (e) {
+      (e.families || []).forEach(function (f) {
+        const k = String(f);
+        famSet.set(k, (famSet.get(k) || 0) + 1);
+      });
+    });
+    let list = q ? S.entities.filter(function (e) { return e.search.indexOf(q) >= 0; }) : S.entities.slice();
+    if (S.familyFilter) {
+      const ff = S.familyFilter.toLowerCase();
+      list = list.filter(function (e) {
+        return (e.families || []).some(function (f) { return String(f).toLowerCase() === ff; });
+      });
+    }
     const mobs = list.filter(function (e) { return e.kind === 'mob'; });
     const others = list.filter(function (e) { return e.kind !== 'mob'; });
     body.innerHTML = '';
+    // filter family chips
+    if (famSet.size) {
+      const bar = document.createElement('div');
+      bar.className = 'family-filter';
+      bar.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;padding:8px 12px 6px;position:sticky;top:0;background:#0c1410;z-index:2;border-bottom:1px solid var(--line)';
+      const allBtn = document.createElement('button');
+      allBtn.className = 'chip-btn' + (!S.familyFilter ? ' on' : '');
+      allBtn.textContent = 'Semua';
+      allBtn.onclick = function () { S.familyFilter = ''; renderEntityList(body); };
+      bar.appendChild(allBtn);
+      Array.from(famSet.entries()).sort(function (a, b) { return b[1] - a[1] || a[0].localeCompare(b[0]); }).slice(0, 24).forEach(function (pair) {
+        const b = document.createElement('button');
+        b.className = 'chip-btn' + (S.familyFilter === pair[0] ? ' on' : '');
+        b.textContent = pair[0] + ' · ' + pair[1];
+        b.title = pair[0];
+        b.onclick = function () {
+          S.familyFilter = (S.familyFilter === pair[0]) ? '' : pair[0];
+          renderEntityList(body);
+        };
+        bar.appendChild(b);
+      });
+      body.appendChild(bar);
+    }
     if (!list.length) {
-      body.innerHTML = '<div class="side-empty">Tidak ada entitas cocok dengan “' + esc(q) + '”.</div>';
+      const empty = document.createElement('div');
+      empty.className = 'side-empty';
+      empty.textContent = 'Tidak ada entitas cocok' + (q ? ' dengan “' + q + '”' : '') + (S.familyFilter ? ' · family: ' + S.familyFilter : '') + '.';
+      body.appendChild(empty);
       return;
     }
     const addGroup = function (label, arr) {
@@ -6383,7 +7250,7 @@ autoRotate: false,
   }
 
   /* ---------- audio ---------- */
-  async function playAudio(file) {
+  async function playAudio(file, opts) {
     if (!file) return;
     if (!/\.(ogg|wav|mp3)$/i.test(file.path)) {
       U.toast('File suara ini (' + U.ext(file.path) + ') terenkripsi / tidak didukung browser.');
@@ -6391,16 +7258,22 @@ autoRotate: false,
     }
     try {
       const url = await A.blobUrl(file);
-      if (S.audio) { try { S.audio.pause(); } catch (e) { } }
+      if (S.audio) { try { S.audio.pause(); S.audio.src = ''; } catch (e) { } }
       const audio = new Audio(url);
+      // loop ikut animasi: jika animasi loop, audio juga di-loop (dan di-restart tiap cycle anim)
+      audio.loop = !!(opts && opts.loop);
       S.audio = audio;
       await audio.play();
-      U.toast('▶ ' + U.basename(file.path), 1400);
+      if (!(opts && opts.silentToast)) U.toast('▶ ' + U.basename(file.path), 1400);
     } catch (e) {
       U.toast('Gagal memutar audio: ' + e.message);
     }
   }
   UI.playAudio = playAudio;
+  function stopAnimAudio() {
+    if (S.audio) { try { S.audio.pause(); S.audio.src = ''; } catch (e) {} S.audio = null; }
+  }
+  UI.stopAnimAudio = stopAnimAudio;
 
   /* ---------- modal file ---------- */
   function closeModal() { $('#modal').classList.remove('open'); }
