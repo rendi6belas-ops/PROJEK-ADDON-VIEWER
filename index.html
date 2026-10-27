@@ -880,6 +880,9 @@ window.MC = window.MC || {};
       variant: 0, mark_variant: 0, skin_id: 0, trade_tier: 0,
       is_tamed: 0, is_illager_captain: 0, is_sheared: 0, is_chested: 0,
       is_gliding: 0, is_swimming: 0, is_sleeping: 0, is_roaring: 0,
+      is_rolling: 0, is_rolled_up: 0, is_scared: 0, is_standing: 0,
+      is_interested: 0, is_charging: 0, is_powered: 0, is_stunned: 0,
+      is_transforming: 0, is_eating: 0, is_laying_egg: 0, has_rider: 0,
       vertical_speed: 0, distance_from_camera: 0, head_x_rotation: 0, head_y_rotation: 0,
       target_x_rotation: 0, target_y_rotation: 0, body_x_rotation: 0, body_y_rotation: 0,
       is_item_equipped: 0, is_jumping: 0, all_slots_empty: 1, has_target: 0,
@@ -1399,6 +1402,15 @@ window.MC = window.MC || {};
       // alias tanpa prefix geometry.
       const bare = String(g.id).replace(/^geometry\./i, '');
       if (bare && bare !== String(g.id).toLowerCase()) reg(idx.geometries, bare, g);
+      // alias tanpa underscore: geometry.polarbear ↔ geometry.polar_bear
+      const nos = bare.replace(/_/g, '').toLowerCase();
+      if (nos && nos !== bare.toLowerCase()) {
+        reg(idx.geometries, nos, g);
+        reg(idx.geometries, 'geometry.' + nos, g);
+      }
+      if (bare.indexOf('_') < 0 && bare.length > 4) {
+        // juga daftar bentuk file umum (polar_bear dari polarbear) — tidak perlu
+      }
     });
   }
 
@@ -1689,6 +1701,8 @@ window.MC = window.MC || {};
     const I = idx();
     const raw = String(geoId).trim();
     const lower = raw.toLowerCase();
+    const strip = function (s) { return String(s || '').toLowerCase().replace(/^geometry\./, '').split(':').pop(); };
+    const noscore = function (s) { return strip(s).replace(/_/g, ''); };
     const candidates = [];
     const push = function (x) { if (x && candidates.indexOf(x) < 0) candidates.push(x); };
     push(lower);
@@ -1699,21 +1713,39 @@ window.MC = window.MC || {};
     if (/^geometry\./i.test(raw) === false && /^[a-z0-9_.:-]+$/i.test(raw)) {
       push('geometry.' + lower);
     }
+    // variasi underscore: polar_bear ↔ polarbear
+    const bare0 = strip(lower);
+    if (bare0.indexOf('_') >= 0) {
+      push(bare0.replace(/_/g, ''));
+      push('geometry.' + bare0.replace(/_/g, ''));
+    } else {
+      // coba bentuk umum dengan underscore di boundary kata (tidak spekulatif berlebih)
+    }
     let g = null;
     for (let i = 0; i < candidates.length; i++) {
       g = I.geometries.get(candidates[i]);
       if (g && g.def) return g;
     }
-    // fuzzy: cocokkan akhir identifier
-    const want = lower.replace(/^geometry\./, '').split(':').pop();
+    // fuzzy: cocokkan akhir identifier + tanpa underscore
+    const want = strip(lower);
+    const wantNS = noscore(lower);
     const list = [];
     I.geometries.forEach(function (v) { list.push(v); });
+    // exact / endsWith dulu
     g = list.find(function (it) {
       if (!it || !it.def) return false;
       const id = String(it.id).toLowerCase();
-      const bare = id.replace(/^geometry\./, '').split(':').pop();
-      return id === lower || bare === want || id.endsWith('.' + want) || bare.endsWith('.' + want);
+      const bare = strip(id);
+      return id === lower || bare === want || id.endsWith('.' + want) || bare.endsWith('.' + want)
+        || bare.endsWith('_' + want) || want.endsWith('_' + bare);
     });
+    if (!g) {
+      // fallback: bandingkan tanpa underscore (polarbear == polar_bear)
+      g = list.find(function (it) {
+        if (!it || !it.def) return false;
+        return noscore(it.id) === wantNS;
+      });
+    }
     if (g && !g.def) g = null;
     return g || null;
   }
@@ -2378,6 +2410,31 @@ window.MC = window.MC || {};
         });
       }
     };
+    // 0) client entity sound map (jika ada)
+    try {
+      const cSounds = (client && (client.sound_effects || client.sounds || client.sound_events)) || null;
+      if (cSounds && typeof cSounds === 'object') {
+        const walk = function (obj, prefix) {
+          Object.keys(obj).forEach(function (k) {
+            const v = obj[k];
+            if (typeof v === 'string') addSoundEvent(v, 'client:' + (prefix || k));
+            else if (v && typeof v === 'object') {
+              if (typeof v.sound === 'string') addSoundEvent(v.sound, 'client:' + k);
+              if (typeof v.event_name === 'string') addSoundEvent(v.event_name, 'client:' + k);
+              walk(v, k);
+            }
+          });
+        };
+        walk(cSounds, '');
+      }
+    } catch (e) {}
+    // 0b) animation controllers: sound effects di state transitions
+    try {
+      (animControllers || []).forEach(function (acName) {
+        const ac = idx().animControllers && (idx().animControllers.get(String(acName).toLowerCase()) || idx().animControllers.get(acName));
+        // skip if no index for AC
+      });
+    } catch (e) {}
     // 1) event dari komponen behavior apa pun yang berbau suara
     comps.forEach(function (c) {
       const lname = c.name.toLowerCase();
@@ -2765,6 +2822,7 @@ autoRotate: false,
       o.theta -= dx * sens;
       o.phi = U.clamp(o.phi - dy * sens, 0.05, Math.PI - 0.05);
       o.vTheta = 0; o.vPhi = 0; o.vPanX = 0; o.vPanY = 0;
+      o._userTouched = true;
     }
     function panBy(dx, dy) {
       const cam = state.camera;
@@ -3061,14 +3119,18 @@ autoRotate: false,
       g.name = name;
       const pivot = Array.isArray(b.pivot) ? b.pivot.map(Number) : [0, 0, 0];
       const rot = Array.isArray(b.rotation) ? b.rotation.map(Number) : [0, 0, 0];
+      // bind_pose_rotation: di-bake ke mesh cube (staticMat). JANGAN juga putar bone group
+      // agar child bone (head/legs) tetap di posisi absolut model-space yang benar.
+      const bind = Array.isArray(b.bind_pose_rotation) ? b.bind_pose_rotation.map(Number) : null;
+      const hasBind = !!(bind && (bind[0] || bind[1] || bind[2]));
+      const staticMat = hasBind ? rotEuler(bind) : null;
       g.rotation.order = 'ZYX';
       g.rotation.set(rot[0] * DEG, rot[1] * DEG, rot[2] * DEG);
-      const bind = Array.isArray(b.bind_pose_rotation) ? b.bind_pose_rotation.map(Number) : null;
-      const staticMat = bind && (bind[0] || bind[1] || bind[2]) ? rotEuler(bind) : null;
       const rec = {
         name: name, group: g, def: b, parent: b.parent || null,
-        pivot: pivot, baseRot: rot, basePos: new THREE.Vector3(),
+        pivot: pivot, baseRot: rot.slice(), basePos: new THREE.Vector3(),
         staticMat: staticMat, mirror: !!b.mirror,
+        neverRender: !!b.neverRender,
         cubes: (b.cubes || []).length, curRot: rot.slice(), curPos: [0, 0, 0], curScale: [1, 1, 1]
       };
       boneMap.set(name.toLowerCase(), rec);
@@ -3657,28 +3719,30 @@ autoRotate: false,
     // visibilitas dari render controller (default query.is_baby=0, variant=0)
     applyPartVisibility(detail);
 
-    // ukuran & kamera
-    const box = new THREE.Box3().setFromObject(built.wrap);
-    const size = box.getSize(new THREE.Vector3());
+    // ukuran & kamera — samakan framing dengan thumbnail grid
+    let box = new THREE.Box3().setFromObject(built.wrap);
+    let size = box.getSize(new THREE.Vector3());
+    if (Math.max(size.x, size.y, size.z) < 0.5) {
+      state.bones.forEach(function (rec) { if (rec && rec.group) rec.group.visible = true; });
+      box = new THREE.Box3().setFromObject(built.wrap);
+      size = box.getSize(new THREE.Vector3());
+    }
     const center = box.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 16;
-    state.bbox = box;
-    state.modelSize = size;
+    const maxDim = Math.max(size.x, size.y, size.z, 1);
+    state.bbox = box.clone();
+    state.modelSize = size.clone();
 
     const gridSize = Math.max(32, Math.ceil((maxDim * 2) / 16) * 16);
     state.grid.geometry.dispose();
     state.grid.geometry = new THREE.GridHelper(gridSize, gridSize / 8, 0x38664d, 0x1d3128).geometry;
     state.grid.position.y = box.min.y - 0.4;
 
-    // pertahankan sudut kamera user; hanya geser target ke pusat model baru
-    state.orb.target.set(center.x, box.min.y + size.y * 0.5 + size.y * 0.04, center.z);
-    // sesuaikan jarak hanya jika model jauh lebih besar/kecil (hindari lompat)
-    const wantDist = Math.max(maxDim * 1.95, 26);
-    if (!state.orb.dist || state.orb.dist < 2) state.orb.dist = wantDist;
-    else {
-      const ratio = wantDist / state.orb.dist;
-      if (ratio > 2.2 || ratio < 0.45) state.orb.dist = wantDist;
-    }
+    state.orb.target.set(center.x, box.min.y + size.y * 0.54, center.z);
+    state.orb.dist = Math.max(maxDim * 2.05, 22);
+    state.orb.theta = Math.PI * 0.72;
+    state.orb.phi = 1.18;
+    state.orb.vTheta = 0; state.orb.vPhi = 0; state.orb.vPanX = 0; state.orb.vPanY = 0;
+    state.orb._userTouched = false;
     updateCamera();
     if (state.shadow) {
       const r = Math.max(size.x, size.z) * 0.45;
@@ -3721,18 +3785,40 @@ autoRotate: false,
   };
 
   function applyPartVisibility(detail) {
+    // VIEWER MODE: selalu tampilkan semua bone (sama seperti thumbnail grid).
+    // part_visibility RC memakai query/variable runtime yang tidak tersedia di sini
+    // (is_rolled_up, property(), dll) — kalau dipaksa, model "hancur" (sisa 1-2 cube).
+    // Toggle state.forceRCVisibility = true jika ingin uji rule RC.
+    if (!state.bones || !state.bones.size) return;
+    state.bones.forEach(function (rec) {
+      if (rec && rec.group) rec.group.visible = true;
+    });
+    if (!state.forceRCVisibility) return;
     const rules = [];
-    (detail.renderControllers || []).forEach(function (rc) {
+    (detail && detail.renderControllers || []).forEach(function (rc) {
       (rc.partVisibility || []).forEach(function (r) { rules.push(r); });
     });
     if (!rules.length) return;
     const env = MC.molangEnv();
     rules.forEach(function (rule) {
       Object.keys(rule).forEach(function (bone) {
-        const rec = state.bones.get(String(bone).toLowerCase());
-        if (!rec) return;
+        const key = String(bone);
+        if (key === '*' || key.toLowerCase() === 'all') {
+          let vis = true;
+          try { vis = MC.molang.bool(rule[bone], env); } catch (e) { vis = true; }
+          state.bones.forEach(function (rec) {
+            if (rec && rec.group) rec.group.visible = vis !== false;
+          });
+          return;
+        }
+        const rec = state.bones.get(key.toLowerCase());
+        if (!rec || !rec.group) return;
         let vis = true;
-        try { vis = MC.molang.bool(rule[bone], env); } catch (e) { vis = true; }
+        try {
+          const expr = rule[bone];
+          if (expr == null || expr === '') vis = true;
+          else vis = MC.molang.bool(expr, env);
+        } catch (e) { vis = true; }
         rec.group.visible = vis !== false;
       });
     });
@@ -3749,7 +3835,18 @@ autoRotate: false,
       if (a.def) a.def.loop = true;
     }
     applyPose(state.anim, 0);
-    if (!a) state.playing = false;
+    if (!a) {
+      state.playing = false;
+      // Tanpa animasi: pastikan tidak ada bone tersisa scale 0 dari pose sebelumnya
+      if (state.bones) {
+        state.bones.forEach(function (rec) {
+          if (!rec || !rec.group) return;
+          rec.group.scale.set(1, 1, 1);
+          rec.group.visible = true;
+        });
+      }
+      if (state.detail) applyPartVisibility(state.detail);
+    }
     if (V.onAnimChange) {
       try { V.onAnimChange(a, index); } catch (e) {}
     }
@@ -3814,9 +3911,12 @@ autoRotate: false,
 
     maps.forEach(function (boneMap) {
       boneMap.forEach(function (rec) {
+        if (!rec.group) return;
         rec.group.rotation.set(rec.baseRot[0] * DEG, rec.baseRot[1] * DEG, rec.baseRot[2] * DEG);
         rec.group.position.copy(rec.basePos);
         rec.group.scale.set(1, 1, 1);
+        // selalu un-hide saat reset pose (anim scale:0 bisa menyembunyikan)
+        if (rec.group.visible === false) rec.group.visible = true;
       });
     });
 
@@ -3839,7 +3939,17 @@ autoRotate: false,
         const scl = channelAt(ch.scale, t, env);
         if (rot) rec.group.rotation.set(rot[0] * DEG, rot[1] * DEG, rot[2] * DEG);
         if (pos) rec.group.position.set(rec.basePos.x + pos[0], rec.basePos.y + pos[1], rec.basePos.z + pos[2]);
-        if (scl) rec.group.scale.set(scl[0] || 0.0001, scl[1] || 0.0001, scl[2] || 0.0001);
+        if (scl) {
+          const sx = scl[0], sy = scl[1], sz = scl[2];
+          // scale 0 di Bedrock = sembunyikan bone (bukan degenerate mesh)
+          if ((sx === 0 && sy === 0 && sz === 0) || (Math.abs(sx) + Math.abs(sy) + Math.abs(sz)) < 1e-6) {
+            rec.group.visible = false;
+            rec.group.scale.set(1, 1, 1);
+          } else {
+            rec.group.visible = true;
+            rec.group.scale.set(sx !== 0 ? sx : 0.0001, sy !== 0 ? sy : 0.0001, sz !== 0 ? sz : 0.0001);
+          }
+        }
       });
     });
   }
@@ -3866,9 +3976,11 @@ autoRotate: false,
     const size = box.getSize(new THREE.Vector3());
     const center = box.getCenter(new THREE.Vector3());
     state.orb.target.set(center.x, box.min.y + size.y * 0.54, center.z);
-    state.orb.dist = Math.max(Math.max(size.x, size.y, size.z) * 1.95, 26);
-    state.orb.theta = Math.PI;
-    state.orb.phi = 1.36;
+    state.orb.dist = Math.max(Math.max(size.x, size.y, size.z) * 2.05, 22);
+    state.orb.theta = Math.PI * 0.72;
+    state.orb.phi = 1.18;
+    state.orb.vTheta = 0; state.orb.vPhi = 0; state.orb.vPanX = 0; state.orb.vPanY = 0;
+    state.orb._userTouched = false;
     updateCamera();
   };
   V.setGrid = function (on) {
@@ -4193,21 +4305,29 @@ autoRotate: false,
     state.detail.model.slot = v.slot;
     state.detail.model.file = v.file;
     applyPartVisibility(state.detail);
-    // reframe camera lightly
+    // reframe camera — samakan logika dengan renderVariantThumb (grid)
+    // supaya fullscreen tidak "terpotong" / model kelihatan kecil / hanya sisa bagian
     const box = new THREE.Box3().setFromObject(built.wrap);
-    const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
-    const maxDim = Math.max(size.x, size.y, size.z) || 16;
-    state.bbox = box;
-    state.modelSize = size;
-    // jangan reset sudut orbit user — hanya pindah target ke model baru
-    state.orb.target.set(center.x, box.min.y + size.y * 0.5 + size.y * 0.04, center.z);
-    const wantDist = Math.max(maxDim * 1.95, 26);
-    if (!state.orb.dist || state.orb.dist < 2) state.orb.dist = wantDist;
-    else {
-      const ratio = wantDist / state.orb.dist;
-      if (ratio > 2.5 || ratio < 0.4) state.orb.dist = wantDist;
+    // kalau setelah part_visibility bbox hampir kosong, force show all lalu hitung ulang
+    let size = box.getSize(new THREE.Vector3());
+    if (Math.max(size.x, size.y, size.z) < 0.5) {
+      state.bones.forEach(function (rec) { if (rec && rec.group) rec.group.visible = true; });
+      box.setFromObject(built.wrap);
+      size = box.getSize(new THREE.Vector3());
     }
+    const center = box.getCenter(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z, 1);
+    state.bbox = box.clone();
+    state.modelSize = size.clone();
+    // target & jarak seperti resetCamera / thumbnail agar model selalu muat di layar
+    state.orb.target.set(center.x, box.min.y + size.y * 0.54, center.z);
+    state.orb.dist = Math.max(maxDim * 2.05, 22);
+    // sudut default 3/4 (mirip grid) hanya saat model baru / force
+    if (force || !state.orb._userTouched) {
+      state.orb.theta = Math.PI * 0.72;
+      state.orb.phi = 1.18;
+    }
+    state.orb.vTheta = 0; state.orb.vPhi = 0; state.orb.vPanX = 0; state.orb.vPanY = 0;
     updateCamera();
     // re-apply current anim pose
     if (state.anim) applyPose(state.anim, state.time);
@@ -4307,26 +4427,41 @@ autoRotate: false,
   // ---- suara & animasi ----
   function findSoundForAnim(anim) {
     if (!anim || !state.detail || !state.detail.sounds) return null;
-    const name = String(anim.short || anim.id || '').toLowerCase();
-    const ent = String(state.detail.id || '').split(':').pop().toLowerCase();
-    
-    // Cari event suara yang namanya mirip dengan nama animasi (misal "attack" -> "mob.zombie.attack")
-    let best = null;
-    for (const s of state.detail.sounds) {
-        if (!s.files || !s.files.length) continue;
-        const ev = String(s.event || '').toLowerCase();
-        // Cocokkan kata kunci
-        if (name.indexOf('attack') >= 0 && ev.indexOf('attack') >= 0) { best = s; break; }
-        if (name.indexOf('shoot') >= 0 && ev.indexOf('shoot') >= 0) { best = s; break; }
-        if (name.indexOf('hurt') >= 0 && ev.indexOf('hurt') >= 0) { best = s; break; }
-        if (name.indexOf('death') >= 0 && (ev.indexOf('death') >= 0 || ev.indexOf('die') >= 0)) { best = s; break; }
-        if (name.indexOf('idle') >= 0 && ev.indexOf('idle') >= 0) { best = s; break; }
-        if (name.indexOf('walk') >= 0 && ev.indexOf('step') >= 0) { best = s; break; }
-        
-        // Cocokkan nama entitas
-        if (ev.indexOf(ent) >= 0 && name.indexOf(ev.split('.').pop()) >= 0) { best = s; break; }
-    }
-    return best;
+    const name = String(anim.short || anim.id || '').toLowerCase().replace(/^animation\./, '');
+    const short = String(anim.short || '').toLowerCase();
+    const ent = String(state.detail.id || '').split(':').pop().toLowerCase().replace(/_/g, '');
+    const keys = [];
+    // pecah nama animasi jadi token: walk, attack, ambient, step, ...
+    const tokens = (short || name).split(/[._]/).filter(Boolean);
+    const prio = ['attack', 'death', 'hurt', 'die', 'ambient', 'idle', 'walk', 'step', 'sprint', 'swim', 'fly', 'roar', 'eat', 'drink', 'sleep', 'shake', 'flap'];
+    let best = null, bestScore = 0;
+    (state.detail.sounds || []).forEach(function (s) {
+      if (!s.files || !s.files.length) return;
+      const ev = String(s.event || '').toLowerCase();
+      const evBare = ev.split('.').pop();
+      let score = 0;
+      // exact short name di event
+      if (short && (ev === short || ev.endsWith('.' + short) || evBare === short)) score += 50;
+      // token overlap
+      tokens.forEach(function (t) {
+        if (t.length < 3) return;
+        if (ev.indexOf(t) >= 0) score += 10;
+        if (evBare === t) score += 15;
+      });
+      // keyword mapping
+      prio.forEach(function (k, i) {
+        if (name.indexOf(k) >= 0 && ev.indexOf(k) >= 0) score += 20 - i;
+      });
+      if (name.indexOf('walk') >= 0 && (ev.indexOf('step') >= 0 || ev.indexOf('walk') >= 0)) score += 18;
+      if (name.indexOf('sprint') >= 0 && (ev.indexOf('step') >= 0 || ev.indexOf('sprint') >= 0)) score += 16;
+      // entity name in event
+      if (ent && ev.replace(/_/g, '').indexOf(ent) >= 0) score += 8;
+      // prefer events that actually have playable files
+      const playable = s.files.some(function (f) { return f.file && /\.(ogg|wav|mp3)$/i.test(f.file.path || f.path || ''); });
+      if (playable) score += 5;
+      if (score > bestScore) { bestScore = score; best = s; }
+    });
+    return bestScore >= 10 ? best : null;
   }
 
   function playAnimLinkedSound(anim) {
