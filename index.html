@@ -554,7 +554,7 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
   background:rgba(12,18,15,.88);color:var(--text);font-size:18px;
   place-items:center;cursor:pointer;backdrop-filter:blur(8px);
 }
-.fs-veil.pure .fs-bar,
+.fs-veil.pure .fs-bar-top,
 .fs-veil.pure .fs-nav,
 .fs-veil.pure .light-panel,
 .fs-veil.pure .floor-panel,
@@ -563,6 +563,20 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
 .fs-veil.pure .pov-panel,
 .fs-veil.pure .compare-panel,
 .fs-veil.pure .bg-menu{display:none !important}
+.fs-veil.pure .fs-bar{
+  display:flex !important;
+  max-height:none;
+  padding:8px 12px max(12px, env(safe-area-inset-bottom));
+  background:#0c1210ee;
+  border-top:1px solid #1e2c24;
+}
+.fs-veil.pure .fs-anim-row{
+  display:flex !important;
+  justify-content:center;
+  gap:6px;
+  flex-wrap:wrap;
+  padding:2px 0 0;
+}
 .fs-veil.pure .fs-pure-close{display:grid}
 .light-panel label{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:var(--muted)}
 .light-panel input[type=range]{flex:1;accent-color:var(--acc);max-width:140px}
@@ -786,7 +800,7 @@ details.comp pre{margin:0;border:0;border-radius:0;max-height:280px}
         <button class="icon-btn" id="fsCompare" title="Bandingkan dengan entitas lain">⧉</button>
         <button class="icon-btn" id="fsCombine" title="Gabungkan model/armor terkait">🧩</button>
         <button class="icon-btn" id="fsShot" title="Screenshot">📷</button>
-        <button class="icon-btn" id="fsPure" title="Fullscreen murni (tanpa tombol)">⊡</button>
+        <button class="icon-btn" id="fsPure" title="Fullscreen murni (hanya tombol animasi)">⊡</button>
         <button class="btn small" id="fsClose">Tutup ✕</button>
       </div>
     </div>
@@ -2766,7 +2780,7 @@ window.MC = window.MC || {};
     materials: [],
     anim: null, animIndex: -1, animList: [],
     playing: false, speed: 1, time: 0,
-    animDir: 1, animLoopMode: 'pingpong',
+    animDir: 1, animLoopMode: 'forward',
 autoRotate: false,
     currentTexture: null,
     textureVariants: [],
@@ -5388,7 +5402,7 @@ autoRotate: false,
         e.stopPropagation();
         closeAllPopups();
         fsVeilEl.classList.add('pure');
-        U.toast('Mode pure — klik ✕ untuk keluar', 2000);
+        U.toast('Mode pure — animasi di bawah, klik ✕ untuk keluar', 2200);
       };
       if (fsPureClose && fsVeilEl) fsPureClose.onclick = function (e) {
         e.preventDefault();
@@ -6249,10 +6263,10 @@ autoRotate: false,
         syncLoopModeUi();
         U.toast(next === 'pingpong' ? 'Loop: Normal ↔ Reverse' : 'Loop: Maju saja');
       };
-      // default pingpong
-      if (V.setAnimLoopMode) V.setAnimLoopMode('pingpong');
-      syncLoopModeUi();
-    }
+      // default: maju terus (normal)
+if (V.setAnimLoopMode) V.setAnimLoopMode('forward');   // ← 'pingpong' → 'forward'
+syncLoopModeUi();
+};
     const fsGridBtn = document.getElementById('fsGrid');
     if (fsGridBtn) fsGridBtn.onclick = function () {
       const on = !V.state.grid.visible; V.setGrid(on);
